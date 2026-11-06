@@ -1,7 +1,8 @@
 from fastapi import APIRouter
+from uuid import UUID
 from fastapi import  HTTPException,status
 from App.Databse.models import Shipment
-from App.api.dependency import ServiceDep
+from App.api.dependency import SellerDep, ServiceDep
 from App.api.schemas.shipment import ShipmentRead,ShipmentStatus,ShipmentCreate,ShipmentChange
 
 
@@ -10,7 +11,7 @@ from App.services.shipment import Shipmentservice
 router= APIRouter(prefix="/shipment",tags=["shipment"])
 
 @router.get("/",response_model=ShipmentRead)
-async def get_shipment(id: int, service :ServiceDep): #the serviceDep is a object of shipmentservice which does CRUD operations
+async def get_shipment(id: UUID, service :ServiceDep): #the serviceDep is a object of shipmentservice which does CRUD operations
     #Session create -> function get_session() <AsuncSession> -> Shipmentservice(session) -> 
     shipment = await service.get_shipment(id)
     if id is None:
@@ -18,13 +19,13 @@ async def get_shipment(id: int, service :ServiceDep): #the serviceDep is a objec
     return shipment
 
 @router.post("/",response_model=None)
-async def submit_shipment(shipment : ShipmentCreate, service :ServiceDep):
-    new_shipment= await service.add(shipment)
+async def submit_shipment(seller : SellerDep,shipment : ShipmentCreate, service :ServiceDep):
+    new_shipment= await service.add(shipment , seller)
     return {"id":new_shipment.id}
 
 
 @router.patch("/",response_model=ShipmentChange)
-async def shipment_patch(id : int,body : ShipmentChange, service :ServiceDep):
+async def shipment_patch(id : UUID,body : ShipmentChange, service :ServiceDep):
     shipment_update= body.model_dump(exclude_none=True)
 
     if not shipment_update:
@@ -36,7 +37,7 @@ async def shipment_patch(id : int,body : ShipmentChange, service :ServiceDep):
     return shipment
 
 @router.delete("/")
-async def delete_shipment(id : int, service :ServiceDep):
+async def delete_shipment(id : UUID, service :ServiceDep):
     await service.delete(id)
     return {f"{id} is deleted"}
 

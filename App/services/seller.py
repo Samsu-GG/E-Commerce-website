@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 from App.api.schemas.seller import SellerCreate, SellerRead
 from App.Databse.models import Seller
 from App.config import security_settings
+from App.utils import generate_access_token
 # remobe the deprecated warning for bcrypt hashing algorithm {deprecated="auto"}
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -37,16 +38,11 @@ class SellerService:
         if not password_context.verify(password,result.password_hash):
             raise HTTPException(status_code=401,detail="Invalid password")
 
-        jwt_token =jwt.encode(
-            payload={
-                "user": {
-                    "name" :  result.name,
-                    "email" : result.email
-                },
-                "exp" : datetime.now() + timedelta(days=3) 
-            },
-            algorithm= security_settings.JWT_ALGORITHM,
-            key= security_settings.JWT_SECRET_KEY
-        )
+        jwt_token = generate_access_token(data={
+            "user": {
+                "name" : result.name,
+                "id" : str(result.id)
+            }
+        })
 
         return jwt_token
